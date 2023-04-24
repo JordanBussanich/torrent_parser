@@ -89,3 +89,30 @@ parser.add_argument('--case-sensitive',
 parser.add_argument('--show-details',
                     action='store_true',
                     help='Show all of the decoded data, rather than just keyword matches.')
+
+arguments = parser.parse_args()
+
+keywords = list[str]()
+
+if arguments.keyword_list:
+    with open(arguments.keyword_list) as f:
+        keywords.extend(f.read().splitlines())
+else:
+    if arguments.search_string:
+        keywords.append(arguments.search_string)
+    
+
+if len(keywords) > 0:
+    print('Searching for the following keywords:\n')
+    print('\n'.join(keywords))
+else:
+    print('Not searching for keywords, just parsing the torrent file.')
+
+print()
+
+searchers = list[Searcher]()
+for keyword in keywords:
+    if arguments.regex:
+        searchers.append(RegexSearcher(keyword, arguments.case_sensitive))
+    else:
+        searchers.append(TextSearcher(keyword, arguments.case_sensitive))
