@@ -20,6 +20,7 @@
 import argparse
 import sys
 import re
+import hashlib
 
 from abc import ABC, abstractmethod
 from fastbencode import bencode, bdecode
@@ -60,6 +61,21 @@ class RegexSearcher(Searcher):
             self.regex = re.compile(search_term)
         else:
             self.regex = re.compile(search_term, re.IGNORECASE)       
+
+
+class Torrent:
+    def __init__(self) -> None:
+        pass
+
+    def __init__(self, name: str, comment: str):
+        pass
+
+    @classmethod
+    def from_file(cls, torrent_path: str):
+        with open(arguments.input_file, mode='rb') as f:
+            torrent_file = f.read()
+
+            decoded_torrent = bdecode(torrent_file)
 
 
 parser = argparse.ArgumentParser(prog='torrent_parser',
@@ -116,3 +132,16 @@ for keyword in keywords:
         searchers.append(RegexSearcher(keyword, arguments.case_sensitive))
     else:
         searchers.append(TextSearcher(keyword, arguments.case_sensitive))
+
+torrent = Torrent.from_file(arguments.input_file)
+
+# if decoded_torrent:
+#     pass
+
+#     print(f"Got torrent'{decoded_torrent[b'info'][b'name'].decode('utf-8')}'")
+#     print()
+
+#     info_hash = hashlib.sha1(bencode(decoded_torrent[b'info'])).hexdigest()
+
+#     print("Info Hash:")
+#     print(info_hash)
