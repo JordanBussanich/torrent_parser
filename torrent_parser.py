@@ -244,15 +244,23 @@ if do_search:
                             search_results.add(result)
 
     if len(search_results) > 0:
-        pass
-        # if arguments.show_details:
-        #     if arguments.search_pieces:
-        #         rows = [[r.torrent.file_path] for r in results]]
+        result_rows = list()
+        result_headers = list()
 
-        #         rows = [[t.file_path, t.name, t.comment, t.info_hash, t.created_by, t.creation_date_utc, t.length_bytes, t.announce, t.announce_list, t.piece_length_bytes, t.pieces] for t in torrents]
-        #         headers = ['Torrent Path', 'Name', 'Comment', 'Info Hash', 'Created By', 'Creation Date UTC', 'Length (bytes)', 'Announce', 'Announce List', 'Piece Length (bytes)', 'Pieces']
-        #     else:
-        #         rows = [[t.file_path, t.name, t.comment, t.info_hash, t.created_by, t.creation_date_utc, t.length_bytes, t.announce, t.announce_list, t.piece_length_bytes] for t in torrents]
-        #         headers = ['Torrent Path', 'Name', 'Comment', 'Info Hash', 'Created By', 'Creation Date UTC', 'Length (bytes)', 'Announce', 'Announce List', 'Piece Length (bytes)']
+        if arguments.show_details:
+            if arguments.search_pieces:
+                result_rows = [[r.search_term, r.torrent.file_path, r.result, r.field_name, r.torrent.name, r.torrent.comment, r.torrent.info_hash, r.torrent.created_by, r.torrent.creation_date_utc, r.torrent.length_bytes, r.torrent.announce, r.torrent.announce_list, r.torrent.piece_length_bytes, r.torrent.pieces] for r in search_results]
+                result_headers = ['Search Term', 'Torrent Path', 'Matching Result', 'Field Name', 'Name', 'Comment', 'Info Hash', 'Created By', 'Creation Date UTC', 'Length (bytes)', 'Announce', 'Announce List', 'Piece Length (bytes)', 'Pieces']
+            else:
+                result_rows = [[r.search_term, r.torrent.file_path, r.result, r.field_name, r.torrent.name, r.torrent.comment, r.torrent.info_hash, r.torrent.created_by, r.torrent.creation_date_utc, r.torrent.length_bytes, r.torrent.announce, r.torrent.announce_list, r.torrent.piece_length_bytes] for r in search_results]
+                result_headers = ['Search Term', 'Torrent Path', 'Matching Result', 'Field Name', 'Name', 'Comment', 'Info Hash', 'Created By', 'Creation Date UTC', 'Length (bytes)', 'Announce', 'Announce List', 'Piece Length (bytes)']
+        else:
+            result_rows = [[r.search_term, r.torrent.file_path, r.result, r.field_name, r.torrent.name, r.torrent.comment, r.torrent.info_hash] for r in search_results]
+            result_headers = ['Search Term', 'Torrent Path', 'Matching Result', 'Field Name', 'Name', 'Comment', 'Info Hash']
+        
+        print("Found the following search hits:")
+        print(tabulate(result_rows, headers=result_headers, tablefmt='mixed_outline'))
+        print()
+
     else:
         print("Did not find any search terms in any torrents.")
