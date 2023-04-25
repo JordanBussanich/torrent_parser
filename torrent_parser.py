@@ -180,21 +180,6 @@ else:
         keywords.append(arguments.search_string)
     
 
-if len(keywords) > 0:
-    print('Searching for the following keywords:\n')
-    print('\n'.join(keywords))
-else:
-    print('Not searching for keywords, just parsing the torrent file.')
-
-print()
-
-searchers = list[Searcher]()
-for keyword in keywords:
-    if arguments.regex:
-        searchers.append(RegexSearcher(keyword, arguments.case_sensitive))
-    else:
-        searchers.append(TextSearcher(keyword, arguments.case_sensitive))
-
 torrents = list[Torrent]()
 if os.path.isdir(arguments.input_file):
     for torrent_file in Path(arguments.input_file).rglob('*.torrent'):
@@ -202,50 +187,72 @@ if os.path.isdir(arguments.input_file):
 else:
     torrents.append(Torrent.from_file(arguments.input_file))
 
-results = set[SearchResult]()
-for torrent in torrents:
-    for searcher in searchers:
-        for attribute, value in torrent.__dict__.items():
-            if not arguments.search_pieces and attribute == 'pieces':
-                continue
-            else:
-                if type(value) is list:
-                    for v in value:
-                        if searcher.search(str(v)):
-                            result = SearchResult(searcher.search_term, str(v), attribute, torrent)
-                            results.add(result)
-                else:
-                    if searcher.search(str(value)):
-                        result = SearchResult(searcher.search_term, str(value), attribute, torrent)
-                        results.add(result)
 
-rows = list()
-headers = list()
-if arguments.show_details:
-    if arguments.search_pieces:
-        rows = [[t.file_path, t.name, t.comment, t.info_hash, t.created_by, t.creation_date_utc, t.length_bytes, t.announce, t.announce_list, t.piece_length_bytes, t.pieces] for t in torrents]
-        headers = ['Torrent Path', 'Name', 'Comment', 'Info Hash', 'Created By', 'Creation Date UTC', 'Length (bytes)', 'Announce', 'Announce List', 'Piece Length (bytes)', 'Pieces']
-    else:
-        rows = [[t.file_path, t.name, t.comment, t.info_hash, t.created_by, t.creation_date_utc, t.length_bytes, t.announce, t.announce_list, t.piece_length_bytes] for t in torrents]
-        headers = ['Torrent Path', 'Name', 'Comment', 'Info Hash', 'Created By', 'Creation Date UTC', 'Length (bytes)', 'Announce', 'Announce List', 'Piece Length (bytes)']
+do_search = len(keywords) > 0
+
+if do_search:
+    print('Searching for the following keywords:\n')
+    print('\n'.join(keywords))
 else:
-    rows = [[t.file_path, t.name, t.comment, t.info_hash] for t in torrents]
-    headers = ['Torrent Path', 'Name', 'Comment', 'Info Hash']
+    print('Not searching for keywords, just parsing the torrent file(s).')
 
-print("Decoded the following torrents:")
-print(tabulate(rows, headers=headers, tablefmt='mixed_outline'))
 print()
 
-if len(results) > 0:
-    pass
-    # if arguments.show_details:
-    #     if arguments.search_pieces:
-    #         rows = [[r.torrent.file_path] for r in results]]
 
-    #         rows = [[t.file_path, t.name, t.comment, t.info_hash, t.created_by, t.creation_date_utc, t.length_bytes, t.announce, t.announce_list, t.piece_length_bytes, t.pieces] for t in torrents]
-    #         headers = ['Torrent Path', 'Name', 'Comment', 'Info Hash', 'Created By', 'Creation Date UTC', 'Length (bytes)', 'Announce', 'Announce List', 'Piece Length (bytes)', 'Pieces']
-    #     else:
-    #         rows = [[t.file_path, t.name, t.comment, t.info_hash, t.created_by, t.creation_date_utc, t.length_bytes, t.announce, t.announce_list, t.piece_length_bytes] for t in torrents]
-    #         headers = ['Torrent Path', 'Name', 'Comment', 'Info Hash', 'Created By', 'Creation Date UTC', 'Length (bytes)', 'Announce', 'Announce List', 'Piece Length (bytes)']
+parsed_torrent_rows = list()
+parsed_torrent_headers = list()
+if arguments.show_details:
+    if arguments.search_pieces:
+        parsed_torrent_rows = [[t.file_path, t.name, t.comment, t.info_hash, t.created_by, t.creation_date_utc, t.length_bytes, t.announce, t.announce_list, t.piece_length_bytes, t.pieces] for t in torrents]
+        parsed_torrent_headers = ['Torrent Path', 'Name', 'Comment', 'Info Hash', 'Created By', 'Creation Date UTC', 'Length (bytes)', 'Announce', 'Announce List', 'Piece Length (bytes)', 'Pieces']
+    else:
+        parsed_torrent_rows = [[t.file_path, t.name, t.comment, t.info_hash, t.created_by, t.creation_date_utc, t.length_bytes, t.announce, t.announce_list, t.piece_length_bytes] for t in torrents]
+        parsed_torrent_headers = ['Torrent Path', 'Name', 'Comment', 'Info Hash', 'Created By', 'Creation Date UTC', 'Length (bytes)', 'Announce', 'Announce List', 'Piece Length (bytes)']
 else:
-    print("Did not find any search terms in any torrents.")
+    parsed_torrent_rows = [[t.file_path, t.name, t.comment, t.info_hash] for t in torrents]
+    parsed_torrent_headers = ['Torrent Path', 'Name', 'Comment', 'Info Hash']
+
+
+print("Decoded the following torrents:")
+print(tabulate(parsed_torrent_rows, headers=parsed_torrent_headers, tablefmt='mixed_outline'))
+print()
+
+if do_search:
+    searchers = list[Searcher]()
+    for keyword in keywords:
+        if arguments.regex:
+            searchers.append(RegexSearcher(keyword, arguments.case_sensitive))
+        else:
+            searchers.append(TextSearcher(keyword, arguments.case_sensitive))
+
+
+    search_results = set[SearchResult]()
+    for torrent in torrents:
+        for searcher in searchers:
+            for attribute, value in torrent.__dict__.items():
+                if not arguments.search_pieces and attribute == 'pieces':
+                    continue
+                else:
+                    if type(value) is list:
+                        for v in value:
+                            if searcher.search(str(v)):
+                                result = SearchResult(searcher.search_term, str(v), attribute, torrent)
+                                search_results.add(result)
+                    else:
+                        if searcher.search(str(value)):
+                            result = SearchResult(searcher.search_term, str(value), attribute, torrent)
+                            search_results.add(result)
+
+    if len(search_results) > 0:
+        pass
+        # if arguments.show_details:
+        #     if arguments.search_pieces:
+        #         rows = [[r.torrent.file_path] for r in results]]
+
+        #         rows = [[t.file_path, t.name, t.comment, t.info_hash, t.created_by, t.creation_date_utc, t.length_bytes, t.announce, t.announce_list, t.piece_length_bytes, t.pieces] for t in torrents]
+        #         headers = ['Torrent Path', 'Name', 'Comment', 'Info Hash', 'Created By', 'Creation Date UTC', 'Length (bytes)', 'Announce', 'Announce List', 'Piece Length (bytes)', 'Pieces']
+        #     else:
+        #         rows = [[t.file_path, t.name, t.comment, t.info_hash, t.created_by, t.creation_date_utc, t.length_bytes, t.announce, t.announce_list, t.piece_length_bytes] for t in torrents]
+        #         headers = ['Torrent Path', 'Name', 'Comment', 'Info Hash', 'Created By', 'Creation Date UTC', 'Length (bytes)', 'Announce', 'Announce List', 'Piece Length (bytes)']
+    else:
+        print("Did not find any search terms in any torrents.")
